@@ -1,0 +1,304 @@
+Dizajn Sistema
+
+Razvoj bilo kakvog relativno kompleksnog proizvoda zahteva neku vrstu plana ili dizajna. Obicno ako se znaju neki podaci o proizvodu onda mozemo proceniti koliko resursa treba uloziti i kako te resurse rasporediti, moze se napraviti plan...
+
+Dizajn sistema predstavlja proces definisanja arhitekture, komponenti, modula, interfejsa i podataka koji zadovljavaju odredjene zahteve.
+
+Odredjena arhitektura nosi sa sobom odredjene posledice i ogranicenja.
+
+Efikasno planiranje i uocavanje raznih osobina raznih arhitektura tokom faze planiranja (pre odabira arhitekture) omogucava nam da procenimo optimalno resenje za vrste komponenti koje ce se korititi, njihove duznosti ili ponasanje, strukturu projekta...
+
+Ovo moze omoguciti laksi razvoj, odrzavanje, testiranje... A samim tim i smanjenje troskova i vece zadovoljstvo za radom na datom sistemu.
+
+Tokom planiranja moguce je uvideti resenja koja su vec upotrebljena za resavanje slicnih problema, dokumentovana i omogucena je ponovna upotreba, ovo bi bili paterni. Takodje imaju nacini razmisljanja i nacina rada tokom projektovanja i planiranja koji su davali dobre rezultati, ovo bi bili principi.
+
+Dizajn softverskih sistema
+
+Po planiranju razvoj softverskih sistema se ne razlikuje od razvoja ostalih ne virtualnih sistema, i ono zahteva povezivanje komponenti sistema uz podrsku softverskih paterna i principa.
+
+Softverski Paterni
+
+Delovi koda, uml dijagrami, dokumentacija koja opisuje odredjeni problem. Najcesce nude kostur resenja problema koji je potrebno prosiriti dopunom koja implementira resenje naseg problema.
+
+Imamo nekoliko nacina podela paterna jedna od zvanicnih podela podrazumeva nekoliko grupa na osnovu domena problema:
+- kreacioni
+- strukturalni
+- sabloni ponasanja
+
+Postoje i arhitektonski sabloni, oni predstavljaju povrsan pregled komponenti koje medjusobno komuniciraju unutar softverskog sistema. Jedan od poznatijih sablona koji pripada ovoj grupi je MVC. Ovaj patern je uz odredjene adaptacije nasao veliku primenu u raznim softverskim resenjima koja koriste graficki korisnicki interfejs. 
+
+Trygve Reenskaug je smislio sablon 70-ih tokom rada u smalltalku. Osnovna ideja sablona je da se funkcionisanje aplikacije podeli na 3 dela koja medjusobno komuniciraju Model View i Controller.
+
+Model sadrzi podatke vezane za domen aplikacije. Kontroler prima poruke iz spoljasnosti sistema i salje poruke modelu koje menjaju stanje modela. View vezan observer paternom za model, sluzi za prezentaciju aplikacije i podataka iz modela korisniku, po orginalnom paternu, view azurira svoju prezentaciju svaki put kada mu model naznaci da je doslo do promene.
+
+Ovaj pattern je uz odredjene promene i prosirenja uticao na razvoj mnogih softverskih biblioteka i frameworka za razvoj gui aplikacija.
+
+Softverski Principi
+
+DRY - Do not repeat yourself
+
+Delovi koda koji koji vrse slicno ponasanje trebalo bi dizajnirati tako da mogu da se smeste na jedno mesto i azuriraju iskljucivo iz tog mesta.
+Treba izbegavati ponavljanje koda koji vrsi isto ili slicno ponasanje zato sto to otezava odrzavanje koda na duze staze.
+
+- Single responsibility priciple, softverska celina, najcesce klasa, ne bi trebala da ima vise od jedne odgovornosti (skup metodi odnosno interfejs).
+
+Ne pridrzavanje ovom principu najcesce dovodi do klasa sa veikim brojem linija, komplikovano ili nemoguce testiranje, tesko razumevanje i odrzavanje koda.
+
+primer ruby pseudo koda koji narusava ovaj princip
+
+Class Student
+
+  def polozeni_ispiti() { ... }
+  def izadji_na_ispit(id_ispita) { ... }
+  def polozi_ispit(id_ispita) { ... }
+
+  def polozeni_ispiti_to_html() { ... }
+
+end
+
+U ovom slucaju se mesa poslovna logika studenta (polozeni_ispiti, polozi ispit, izadji na ispit) sa nacinom prezentacije podataka (polozeni_ispiti_to_html).
+
+Za sledeci primer se takodje moze reci da narusava ovaj princip:
+
+Class Student
+
+  # metode koje pocinju sa .self su metode klase
+
+  def polozeni_ispiti()
+  def izadji_na_ispit(id_ispita)
+  def polozi_ispit(id_ispita)
+
+  self.create()
+  save()
+  update(hash_vrednosti)
+
+end
+
+U ovom slucaju mesamo poslovnu logiku sa logikom skladistenja podataka (self.sacuvaj i update). Ako bi implementirali save, create i update (metode koje skladiste podatke u neko skladiste) unutar ove klase, tesko bi mogli promeniti mehanizam skladistenja u buducnosti (preci sa sql na nosql bazu, graficku bazu ili file_system) ili izvrsiti mockovanje baze podataka za svrhe testiranja (ubrzavanje unit testova tako sto se otkacuju od baze), a da uz to ne moramo da menjamo i metode poslovne logike.
+
+Dobar nacin resavanja ovakvih problema je koriscenje dekorator paterna. Ukoliko zelimo da imamo razne prezentacije objekata bez toga da njihove klase direktno implementira te prezentacije.
+
+class Student
+
+  def spisak_polozenih_ispiti()
+  def izadji_na_ispit(id_ispita)
+  def polozi_ispit(id_ispita)
+
+end
+
+class StudentHtmlPresenter < Student
+
+  def spisak_polozenih_ispita_to_html()
+
+end
+
+ovde koristimo nasledjivanje da bi klasi koja prezentuje omogucili pristup podacima i metodama koje nudi student klasa. Prezenterska klasa koristi podatke od studenta da bi implementirala trazene prezenterske metode, u ovom slucaju html prezentaciju studenta. 
+
+ili
+
+class StudentHtmlPresenter < SimpleDelegator
+
+  def initialize(student)
+
+  def spisak_polozenih_ispita_to_html() 
+
+end
+
+Ovde se koristi jedan od mehanizama dinamickih jezika. U prezenterskoj klasi (koja nasledjuje delegator) svaki put kad se pozove metoda koja nije implementirana u samoj klasi, poziv metode se delegira objektu koji je prosledjen konstruktoru. Na ovaj nacin unutar prezenterske klase se mogu pozivati metode Student klase (student objekta u konstrukoru) kao da su implementirane u prezenterskoj klasi.
+
+Kod problema sa skladistenjem, ovo bi moglo biti jedno od resenja:
+
+class Student
+
+  def initialize(skladiste) do
+    this.skladiste = skladiste
+  end
+
+  # poziv metode i kreiranje polozenog ispita u skladistu na osnovu id-a od studenta i ispita.
+  def polozi_ispit(ispit) do
+    this.skladiste.sacuvaj_polozeni_ispit(this.id, ispit_id)
+  end
+
+end
+
+Ovde je koriscen Dependency injection (softverski pattern i princip (SOLID)). Klasa Student preko konstruktora zavisi od interfejsa skladista, ali ne od implementacije skladista. 
+
+----
+
+- Open-Close principle, softverske celine (klase, moduli, funkcije) bi trebale da budu otvorene za prosirivanje ali zatvorene za promene. Klase bi trebalo dizajnirati tako da se mogu lako naslediti ili prosiriti nekim mehanizmima reuse-ovanja koda. Klasa nastala od prethodne ne mora da ima isti interfejs, odnosno moze koristiti inrfejs parent klase i prosiriti ga novim metodama.
+
+- Dependency inversion principle (Dependency Injection, Inversion of control, Plug-In, Interface...)
+
+  - High level module should not depend on low-level modules. Both should depend on abstractions.
+  - Abstraction should not depend on detail, details should depend on abstractions.
+
+... Objasnenje...
+
+RUBY
+
+  Ruby je dinamicki objektno orijentisani jezik. Autor jezika je Yukihiro "Matz" Matsumoto. Javno se pojavljuje 1995, 2006 postaje masovno priznat u vecim gradovima, i organizuju se mnoge konferencije posvecene njemu. Jezik se moze besplatno koristiti, kopirati, modifikovati i distribuirati.
+
+  - Sve je objekat
+
+  svakom delu informacije ili koda mogu se dodati atributi i metode.
+
+  5.times { print "We *love* Ruby -- it's outrageous!" }
+
+  U ovom kodu je prikazan poziv metode nad pozitivnim brojem (instanca Fixnum klasa).
+
+  - Otvorenost klasa
+
+  Postojece klase mozemo da 'otvaramo' i da im redefinisemo ili dodajemo nove metode.
+
+  class String
+
+    def to_camelcase do
+      self.split("_").map(&:capitalize).join("")
+    end
+
+    def uppercase
+      self.downcase
+    end
+
+  end
+
+  "hello_world".to_camelcase # -> HelloWorld
+  "HelloWorld".uppercase # -> helloworld
+
+  U ovom primeru je prikazano otvaranje postojece klase String i dodavanje nove metode, i redefinisanje postojece.
+
+  U praksi nije preporucljivo preterivati sa redefinisanjem core ruby biblioteka (monkey-patching) posto moze da dovede do nepredvidljivih gresaka. Mnogi ruby framework-i olaksavaju pisanje aplikacija tako sto nude dodatne metode postojecim klasama i time smanjuju kolicinu koda koja treba da se pise.
+
+  - Blokovi
+
+  Svakom pozivu metode moze da se doda closure, odnosno anonimna funkcija koja se moze pozvati unutar pozivane metode.
+
+  Blokovi se mogu prepoznati po kljucnim recima "do" i "end" koje respektivno otvaraju i zatvaraju blok. Takodje se mogu koristiti "{" i "}". Obicno se prvi nacin koristi za viselinijske blokove dok drugi za jednolinijske, postoji i mala razliku u njihovom koriscenju [NEKI LINK VEZAN ZA TO]
+
+  Ova odlika jezika je vrlo popularna i izuzetno korisni u mnogim slucajevima. U radu cine vrlo bitan deo za pravljenje dsl-a.
+
+  search_engines =
+    ["Google", "Yahoo", "MSN"].map do |engine|
+      "http://www." + engine.downcase + ".com"
+    end
+
+  puts search_engines # => ["http://www.google.com", "http://www.yahoo.com", "http://www.msn.com"]
+
+  - Intefejsi
+
+  jedna od odlika dinamickih jezika je da ne moraju da se deklarisu tipovi atributa,metoda, parametara... Definicija metode moze da izgledati npr:
+
+    def some_method(*attrs) do
+      puts attrs
+    end
+
+  Interfejsi konceptualno postoje, ali nisu nigde deklarisani u kodu, za razliku od jave ili C#. Interfejs predstavlja skup metoda. Ako neka klasa implementira dati skup metoda, onda se za nju kaze da implementira interfejs (Duck typing).
+
+  class Airplane
+
+    def fly
+      ...
+    end
+
+  end
+
+  def Bird
+
+    def fly
+      ...
+    end
+
+  end
+
+  Za ove 2 klase se kaze da obe implementiraju interfejs letac, odnosno metodu fly, i mogu da se izkoriste u klasi koja koristi ovaj interfejs.
+
+  - Miksini
+
+  Miksins predstavlja jos jedan nacin ponovnog iskoriscavanja koda (pored nasledjivanja). Mixin predstavlja modul (skup implementiranih metoda) koji se pridruze klasi, po pridruzivanju klasa odnosno njeni objekti mogu da koriste te metode. Najcesce mixine nazivamo kao uloga, zato sto funkcionalnosti koje oni dodaju klasi omogucavaju da se ta klasa ponasa kao data uloga.
+
+  # implementacija observer paterna u ruby-u (Observable je vec deo standardne biblioteke u ruby-u, ovo je uproscen primer)
+
+  module Observable
+
+    def add_observer(observer)
+      @observers.add(observer)
+    end
+
+    def notify
+      @observers.each do |observer|
+        observer.update
+      end
+    end
+
+    ...
+
+  end
+
+  class Bank
+
+    include Observable
+
+    def roberry_happening
+      notify
+    end
+
+  end
+
+  class PoliceStation
+
+    def safe_the_day
+      puts "BANG BANG!"
+    end
+
+    def update
+      save_the_day()
+    end
+
+  end
+
+  station1 = PoliceStation.new
+  station2 = PoliceStation.new
+
+  bank = Bank.new
+  
+  bank.add_observers(station1)
+  bank.add_observers(station2)
+
+  bank.roberry_happening
+
+  # => BANG BANG!
+  # => BANG BANG!
+
+U primeru je pokazano da se klasa Banka ponasa kao Observable, odnosno ona ukljucuje nove metode iz eksternog modula, tako sto include-uje taj modul.
+
+- method_missing (ghost method)
+
+  method_missing je metoda koju implementira Object klasa, koju nasledjuju sve klase. Ona se poziva svaki put kad se pozove metoda koja nije implementirana u klasi (ukljucujuci nasledjene klase i ukljucene module). Ovu metodu je moguce redefinisati.
+
+class MyClass
+
+  def method_missing(name, *args, &block)
+    puts "method '#{name}' called with #{args}, oh but it's 'missing'!"
+  end
+
+end
+
+c = MyClass.new
+
+c.what?("arg1", "arg2")
+
+# => method 'what?' called with ["sss", "this_method"], oh but it's 'missing'!
+
+Interni DSL-ovi ekstenzivno koriste ovaj mehanizam. Nekad moze da se pokaze kao spor, posto method lookup (pretraga da li metoda postoji ili ne) moze da traje duze za neke objekte. Zato se ovaj mehanizam kombinuje sa dinamickim definisanjem metoda, odnosno ako ne postoji trenutno metoda, moze se dinamicki definisati i pozvati. Na ovaj nacin samo prvi poziv bude sporiji, ostali budu brzi posto je metoda definisana i na pocetku liste u slucaju ponovnog lookup-a.
+
+Dobra praksa je omoguciti da method_missing metoda propagira poziv dalje parent klasama (njihovim method_missing metodama) ukoliko ne zna sta da radi sa pozivom, tako da ne ispadne da klasa 'definise' sve metode koje ne implementira i da moze doci do orginalne method_missing metode koja baca MethodMissing izuzetak.
+
+ActiveRecords, poznata ORM biblioteka koristi mehanizam sa dinamickim definisanjem nepoznatih metode opisan prethodno.
+
+npr:
+
+User.find_by_grandfathers_middle_name("Daisy")
+
+# gde pritom u bazi postoji User tabela sa grandfathers_middle_name kolonom (inace method missing izuzetak).
+
+
