@@ -46,7 +46,7 @@ Ne pridrzavanje ovom principu najcesce dovodi do klasa sa veikim brojem linija, 
 
 primer ruby pseudo koda koji narusava ovaj princip
 
-Class Student
+class Student
 
   def polozeni_ispiti() { ... }
   def izadji_na_ispit(id_ispita) { ... }
@@ -60,7 +60,7 @@ U ovom slucaju se mesa poslovna logika studenta (polozeni_ispiti, polozi ispit, 
 
 Za sledeci primer se takodje moze reci da narusava ovaj princip:
 
-Class Student
+class Student
 
   # metode koje pocinju sa .self su metode klase
 
@@ -68,9 +68,9 @@ Class Student
   def izadji_na_ispit(id_ispita)
   def polozi_ispit(id_ispita)
 
-  self.create()
-  save()
-  update(hash_vrednosti)
+  def self.create()
+  def save()
+  def update(hash_vrednosti)
 
 end
 
